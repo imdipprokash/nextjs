@@ -1,64 +1,88 @@
-name: Frontend Next.js CI
+# name: Frontend Next.js CI
 
-# on: [push]
+# # on: [push]
+# on:
+#   push:
+#     branches: [main]
+#   pull_request:
+#     branches: [main]
+
+# jobs:
+#   build:
+#     runs-on: ubuntu-latest
+
+#     strategy:
+#       matrix:
+#         node-version: [19.x]
+
+#     steps:
+#       - name: Checkout the repo
+#         uses: actions/checkout@v2
+#       - name: Use Node.js ${{ matrix.node-version }}
+#         uses: actions/setup-node@v2
+#         with:
+#           node-version: ${{ matrix.node-version }}
+#       - name: Install yarn
+#         run: npm install -g yarn
+#       - name: Get yarn cache directory path
+#         id: yarn-cache-dir-path
+#         run: echo "::set-output name=dir::$(yarn cache dir)"
+#       - uses: actions/cache@v2
+#         id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
+#         with:
+#           path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+#           key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+#           restore-keys: |
+#             ${{ runner.os }}-yarn-
+#       - uses: actions/cache@v2
+#         with:
+#           path: "**/node_modules"
+#           key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
+#       - name: Install deps
+#         working-directory: .
+#         if: steps.yarn-cache.outputs.cache-hit != 'true'
+#         run: yarn install
+#       - name: Check codebase
+#         working-directory: .
+#         run: yarn build
+
+#   deploy:
+#     needs: build
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - name: Install SSH Key
+#         uses: shimataro/ssh-key-action@v2
+#         with:
+#           key: ${{ secrets.SSH_PRIVATE_KEY }}
+#           known_hosts: "placeholder"
+#       - name: Adding Known Hosts
+#         run: ssh-keyscan -H ${{ secrets.FE_SERVER_IP }} >> ~/.ssh/known_hosts
+#       - name: Run deploy script
+#         run: ssh ubuntu@${{ secrets.FE_SERVER_IP }} bash deploy.sh
+
+name: CI
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
-
+  workflow_dispatch:
 jobs:
   build:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [19.x]
-
     steps:
-      - name: Checkout the repo
-        uses: actions/checkout@v2
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v2
+      - uses: actions/checkout@v1
+      - uses: actions/setup-node@v1
         with:
-          node-version: ${{ matrix.node-version }}
-      - name: Install yarn
-        run: npm install -g yarn
-      - name: Get yarn cache directory path
-        id: yarn-cache-dir-path
-        run: echo "::set-output name=dir::$(yarn cache dir)"
-      - uses: actions/cache@v2
-        id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
+          node-version: "19.x"
+      - name: Install NPM dependencies
+        run: npm install
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
         with:
-          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
-      - uses: actions/cache@v2
-        with:
-          path: "**/node_modules"
-          key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
-      - name: Install deps
-        working-directory: .
-        if: steps.yarn-cache.outputs.cache-hit != 'true'
-        run: yarn install
-      - name: Check codebase
-        working-directory: .
-        run: yarn build
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    env:
-      key : -----BEGIN RSA PRIVATE KEY----- MIIEogIBAAKCAQEAkr6fxpszdBypgCYgLB5CZtBz+gTAFWcD+oAfkRTucOmyRg3B w4pTYeMRmtTMN6WDRWCHAx83AGd+a8bATsuKFyy6WoI5OxVczegiASWPpASI1lqI g/3N+fbQp01GdhsjmBqXZlOmjyypjzcrGZvo89e0XGvjXFL6C/iGeGpsH4fuIE7z OHFzq3OMzlWUjAh1mNSIYqhYJNHMS50XWE3w0eD2ZCiuV5pMcHypjA3Q8STeB6ME 9ME/sKoRC2sNrmieGZh7hPahuTwW3MvE9Pwd4krer+s5f7x2x5YkrlqDShFZ3Zzw +0gVDIsbLUYtxhsdEntL3SwF1AgaFKx4g24vpQIDAQABAoIBABS1EZbVD82yvbh3 qNKQ8o3PnI4LXY+nmcgfjFTMv1jvoViBWHZfbqTBhhpzLN4tXPjNRkAKh5hnAk/z G/ACiNn8Vc+v0KOlwBLOTv4absqWWTjmTZ1Sk15Sld8F6IuCCOPN3M9zvm01wDeV cV+LwLOoHKtuDgdZLi/CQjd7zQYl0WxZ45LOFCaaLtvwBbfZR4WfKvOpGRMbramq giQbbP8so8dF0Pm1PYxVsdR+IcYbwKgETHQdiTcrkZMAFeZ3OvfBjfuwPxAtB2VF J77ogJmuEswEQYHPLrU9Xxlh0xHl73wvjvvABUtlb1GJCO+h44Cvq51f1Cyt4xcu 396P8YECgYEA01ujj5132fRbEsJ2EDACmEMdujLwzrq5cZNYIRYILfAmerTp2oGb /QlZl0QanqFKEx9rbq5A+Olz9Ur2wk70Fcwfl8oAZFU3QyYAjHPzFU4O+Bz1+cth TqrOHDpkiAlOki3WIwRKkeB+TLFBsofscYkufWWnMh6HpQdxBWxG3+8CgYEAsb1F FGqnBvvK0SEp4Sbm4OiS6gLfC7vmuj1bqo9n1aIgRRlHA67YdlXGHKD5qqpGrK9j T57OTUqfRzI8PeeBx6qUMN9USAI+o1+i/7MTrUel2lYVpkp7eXwdZNVf7zEChTEh u+99CmKsZjVdNzz/MTkLzThPMUJJ/HDU8WPIFasCgYBT6+EH1ziNfC7lRf1m9Akz uAKHuk5PZ2jWpfCqQntA8kf1FPx93FS5pgrCuzHuppApA6K+scXuj5ORZBCSmpLk TMaGmJiLPiLRMLerDScJ4JKlBarNYmniuINaRf1A3qEp/bU29i89uOutO/ygDMRf WF7zP3ehuOmXJ1tDEfkaVQKBgF6H872wG7WzJWOk58lAD3t/NuQPMuHixgw3phFI xEjzOYaGsyZaT/ZgGEYRt7f1aDFf9snaBI9HKP+M0E18W6H+L2Lu5LyHtRjfPKoS bFy0xpkhP9J5usIaKOgANE3bGyQLxY1XCoIDiP2zVCiU4IUleglj8XqZbxA8UoUw NLKRAoGALYABblbs/fiiFRMFUFk6nm8fJ5PEbM9ZtCXDFn2NLw4aV6DEgCNdvn43 eLgDfRATuyum+1mCBLU1Sp+XPmfxbYJkwJwCLE4l5wlNs0OomZHPXJWCT9inxypX Tv1aaH8TBQGpvdK8iX7wHFz/4GQ8QSepWDMCUOcfryUAhip0zIk= -----END RSA PRIVATE KEY-----
-    
-    steps:
-      - name: Install SSH Key
-        uses: shimataro/ssh-key-action@v2
-        with:
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          known_hosts: "placeholder"
-      - name: Adding Known Hosts
-        run: ssh-keyscan -H ${{ secrets.FE_SERVER_IP }} >> ~/.ssh/known_hosts
-      - name: Run deploy script
-        run: ssh -i $key ubuntu@${{ secrets.FE_SERVER_IP }} bash deploy.sh
+          aws-access-key-id: ${{ secrets.AWS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
+          aws-region: ap-south-1a
+      - name: Deploy Next.js app
+        run: bash deploy.sh
