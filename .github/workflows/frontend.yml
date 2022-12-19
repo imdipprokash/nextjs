@@ -3,13 +3,12 @@ name: Frontend Next.js CI
 # on: [push]
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     strategy:
@@ -37,7 +36,7 @@ jobs:
             ${{ runner.os }}-yarn-
       - uses: actions/cache@v2
         with:
-          path: '**/node_modules'
+          path: "**/node_modules"
           key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
       - name: Install deps
         working-directory: .
@@ -48,7 +47,6 @@ jobs:
         run: yarn build
 
   deploy:
-
     needs: build
     runs-on: ubuntu-latest
 
@@ -57,8 +55,8 @@ jobs:
         uses: shimataro/ssh-key-action@v2
         with:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          known_hosts: 'placeholder'
+          known_hosts: "placeholder"
       - name: Adding Known Hosts
         run: ssh-keyscan -H ${{ secrets.FE_SERVER_IP }} >> ~/.ssh/known_hosts
       - name: Run deploy script
-        run: ssh ubuntu@${{ secrets.FE_SERVER_IP }} bash deploy.sh
+        run: ssh -i ${{secrets.SSH_PRIVATE_KEY}} ubuntu@${{ secrets.FE_SERVER_IP }} bash deploy.sh
