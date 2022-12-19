@@ -1,14 +1,15 @@
-# name: Frontend Next.js CI
+name: Frontend Next.js CI
 
-# # on: [push]
-# on:
-#   push:
-#     branches: [main]
-#   pull_request:
-#     branches: [main]
+# on: [push]
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
-# jobs:
+jobs:
 #   build:
+
 #     runs-on: ubuntu-latest
 
 #     strategy:
@@ -36,7 +37,7 @@
 #             ${{ runner.os }}-yarn-
 #       - uses: actions/cache@v2
 #         with:
-#           path: "**/node_modules"
+#           path: '**/node_modules'
 #           key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
 #       - name: Install deps
 #         working-directory: .
@@ -46,43 +47,18 @@
 #         working-directory: .
 #         run: yarn build
 
-#   deploy:
+  deploy:
+
 #     needs: build
-#     runs-on: ubuntu-latest
-
-#     steps:
-#       - name: Install SSH Key
-#         uses: shimataro/ssh-key-action@v2
-#         with:
-#           key: ${{ secrets.SSH_PRIVATE_KEY }}
-#           known_hosts: "placeholder"
-#       - name: Adding Known Hosts
-#         run: ssh-keyscan -H ${{ secrets.FE_SERVER_IP }} >> ~/.ssh/known_hosts
-#       - name: Run deploy script
-#         run: ssh ubuntu@${{ secrets.FE_SERVER_IP }} bash deploy.sh
-
-name: CI
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-  workflow_dispatch:
-jobs:
-  build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v1
-      - uses: actions/setup-node@v1
+      - name: Install SSH Key
+        uses: shimataro/ssh-key-action@v2
         with:
-          node-version: "19.x"
-      - name: Install NPM dependencies
-        run: npm install
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_KEY }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
-          aws-region: ap-south-1a
-      - name: Deploy Next.js app
-        run: bash deploy.sh
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          known_hosts: 'placeholder'
+      - name: Adding Known Hosts
+        run: ssh-keyscan -H ${{ secrets.FE_SERVER_IP }} >> ~/.ssh/known_hosts
+      - name: Run deploy script
+        run: ssh ubuntu@${{ secrets.FE_SERVER_IP }} bash deploy.sh
